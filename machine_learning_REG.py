@@ -31,7 +31,10 @@ def Grid_Search_CV_REG(model, params, X_train, X_test,
     y_pred_lst.append(y_pred)
     return best_model, best_params_lst, cv_err_lst, MAE_lst, r2_lst
 
-def error_analysis_graphs(X, y, best_models, models_names, cognitive_indicator, directory_folder):
+def error_analysis_graphs(X, y, best_models, models_names, cognitive_indicator, directory_folder, cognitive_frame):
+    directory_folder_ML = '{0}/ML_REG'.format(directory_folder)
+    if not os.path.isdir(directory_folder_ML):
+            os.mkdir(directory_folder_ML)
     for model_opt in best_models:
         cv = LeaveOneOut()
         pred_targets = np.array([])
@@ -45,47 +48,37 @@ def error_analysis_graphs(X, y, best_models, models_names, cognitive_indicator, 
             pred_labels = model_opt.predict(Xm_test)
             pred_targets = np.append(pred_targets, pred_labels)
             act_targets = np.append(act_targets, ym_test)
+            
+        color_labels = cognitive_frame['Sex'].unique()
+    
+        rgb_values = [sns.color_palette("Set1", 12)[1], sns.color_palette("Set1", 12)[2]]
+        color_map = dict(zip(color_labels, rgb_values))
+    
+        matplotlib.rcParams['font.family'] = 'Times New Roman'
+    
+        fig, ax = plt.subplots(figsize=(7, 5.5))
+        ax.scatter(pred_targets, act_targets, c = cognitive_frame['Sex'].map(color_map))
+    
+        handles = [Line2D([0], [0], marker='o', color='w', markerfacecolor=v, label=k, markersize=10) for k, v in color_map.items()]
+        ax.legend(title='Sex:', handles=handles, bbox_to_anchor=(1.05, 1), loc='upper left', fontsize = 14, title_fontsize=14)
 
-        plt.figure(figsize = (5, 5))
-        plt.plot(pred_targets, act_targets, "o", color = '#3b4cc0', alpha = 0.7)
         b = lambda a: a
         a = np.linspace(min(act_targets), max(act_targets), 2)
-        plt.plot(a, b(a), color = 'red')
+        plt.plot(a, b(a), color = '#E41A1C')
         MAE_m = metrics.mean_absolute_error(act_targets, pred_targets)
         r2_m = metrics.r2_score(act_targets, pred_targets)
-        plt.title('{0}\nMAE = {1:0.3f}, r2 = {2:0.3f}'.format(models_names[best_models.index(model_opt)], MAE_m, r2_m), fontsize = 12)
-        plt.xlabel('Predicted', fontsize = 12)
-        plt.ylabel('Actual', fontsize = 12)
+        plt.title('{0}\nMAE = {1:0.3f}, r2 = {2:0.3f}'.format(models_names[best_models.index(model_opt)], MAE_m, r2_m), fontsize = 14)
+        plt.xlabel('Predicted', fontsize = 14)
+        plt.ylabel('Actual', fontsize = 14)
         plt.xticks(fontsize = 12)
         plt.yticks(fontsize = 12)
-        
-        directory_folder_ML = '{0}/ML_REG'.format(directory_folder)
-        if not os.path.isdir(directory_folder_ML):
-            os.mkdir(directory_folder_ML)
-        
-        plt.savefig('{0}/{1}_{2}_reg.png'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), dpi = 300, bbox_inches = 'tight')
+        plt.tight_layout()
+        plt.savefig('{0}/{1}_{2}_svg.svg'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), facecolor ="white", dpi = 300)
+        plt.savefig('{0}/{1}_{2}_png.png'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), facecolor ="white", dpi = 300)
+        plt.savefig('{0}/{1}_{2}_tif.tif'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), facecolor ="white", dpi = 300)
+       
         plt.close()
     return directory_folder_ML 
-
-def shap_interpretation (model, model_name, X, X_train, directory_folder_ML):
-    shap.initjs()
-    explainer = shap.KernelExplainer(model.predict, X_train)
-    shap_values = explainer.shap_values(X)
-    
-    directory_folder_SHAP = '{0}/SHAP'.format(directory_folder_ML)
-    if not os.path.isdir(directory_folder_SHAP):
-            os.mkdir(directory_folder_SHAP)
-
-    fig = plt.gcf()
-    shap.summary_plot(shap_values, features = X, feature_names = X.columns, max_display = 50)
-    fig.savefig('{0}/{1}_shap_beeswarm.png'.format(directory_folder_SHAP, model_name),
-                format = 'png', dpi = 300, bbox_inches = 'tight')
-    fig = plt.gcf()
-    shap.plots._waterfall.waterfall_legacy(explainer.expected_value, shap_values[0], feature_names = X.columns)
-    fig.savefig('{0}/{1}_shap_waterfall_legacy.png'.format(directory_folder_SHAP, model_name), 
-                format = 'png', dpi = 300, bbox_inches = 'tight')
-    plt.close()
-    pass
 
 def machine_learning_REG (correlation_cpgs, cognitive_frame, cognitive_indicator, directory_folder):
     X = correlation_cpgs

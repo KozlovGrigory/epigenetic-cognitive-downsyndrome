@@ -34,7 +34,12 @@ def Grid_Search_CV_CL(model, params, X_train, X_test,
     y_pred_lst.append(y_pred)
     return best_model, best_params_lst, cv_err_lst, acc_lst, f1_lst
 
-def confusion_matrices (X, y, best_models, models_names, cognitive_indicator, directory_folder):  
+def confusion_matrices (X, y, best_models, models_names, cognitive_indicator, directory_folder): 
+    sns.set(font_scale=1.2, font="Times New Roman")
+    directory_folder_ML = '{0}/ML_CL'.format(directory_folder)
+    if not os.path.isdir(directory_folder_ML):
+        os.mkdir(directory_folder_ML)
+            
     for model_opt in best_models:
         cv = LeaveOneOut()
         pred_targets = np.array([])
@@ -50,42 +55,29 @@ def confusion_matrices (X, y, best_models, models_names, cognitive_indicator, di
 
         acc_m = accuracy_score(act_targets, pred_targets)
         f1_m = f1_score(act_targets, pred_targets, average = 'macro')
-
+        
+        fig, ax = plt.subplots(figsize=(7, 5.5))
         cf_matrix = confusion_matrix(act_targets, pred_targets)
+        
         ax = sns.heatmap(cf_matrix, annot = True, cmap = 'coolwarm')
-        ax.set_title('{0}\nAccuracy = {1:0.3f}, f1 = {2:0.3f}'.format(models_names[best_models.index(model_opt)], acc_m, f1_m), fontsize = 12)
-        ax.set_xlabel('Predicted')
-        ax.set_ylabel('Actual')
+        
+        title_font = {'size':'14'}
+        ax.set_title('{0}\nAccuracy = {1:0.3f}, f1 = {2:0.3f}'.format(models_names[best_models.index(model_opt)], acc_m, f1_m), fontdict = title_font)
+        
+        label_font = {'size':'14'}
+        ax.set_xlabel('Predicted', fontdict = label_font)
+        ax.set_ylabel('Actual', fontdict = label_font)
+        
+        ax.tick_params(axis='both', which='major', labelsize=12)
         ax.xaxis.set_ticklabels(['Small','Medium', 'Large'])
         ax.yaxis.set_ticklabels(['Small','Medium', 'Large'])
         
-        directory_folder_ML = '{0}/ML_CL'.format(directory_folder)
-        if not os.path.isdir(directory_folder_ML):
-            os.mkdir(directory_folder_ML)
-        
-        plt.savefig('{0}/{1}_{2}_cl.png'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), dpi = 300)
+        plt.tight_layout()
+        plt.savefig('{0}/{1}_{2}_svg.svg'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), dpi = 300)
+        plt.savefig('{0}/{1}_{2}_png.png'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), dpi = 300)
+        plt.savefig('{0}/{1}_{2}_tif.tif'.format(directory_folder_ML, cognitive_indicator, models_names[best_models.index(model_opt)]), dpi = 300)
         plt.close()
     return directory_folder_ML
-
-def shap_interpretation (model, model_name, X, X_train, directory_folder_ML):
-    shap.initjs()
-    explainer = shap.KernelExplainer(model.predict, X_train)
-    shap_values = explainer.shap_values(X)
-    
-    directory_folder_SHAP = '{0}/SHAP'.format(directory_folder_ML)
-    if not os.path.isdir(directory_folder_SHAP):
-            os.mkdir(directory_folder_SHAP)
-
-    fig = plt.gcf()
-    shap.summary_plot(shap_values, features = X, feature_names = X.columns, max_display = 50)
-    fig.savefig('{0}/{1}_shap_beeswarm.png'.format(directory_folder_SHAP, model_name),
-                format = 'png', dpi = 300, bbox_inches = 'tight')
-    fig = plt.gcf()
-    shap.plots._waterfall.waterfall_legacy(explainer.expected_value, shap_values[0], feature_names = X.columns)
-    fig.savefig('{0}/{1}_shap_waterfall_legacy.png'.format(directory_folder_SHAP, model_name), 
-                format = 'png', dpi = 300, bbox_inches = 'tight')
-    plt.close()
-    pass
 
 def machine_learning_CL (correlation_cpgs, indicator, cognitive_indicator, directory_folder):
     X = correlation_cpgs
