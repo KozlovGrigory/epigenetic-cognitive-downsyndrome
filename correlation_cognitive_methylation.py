@@ -28,6 +28,7 @@ def scatterplot_cognitive_methylation (indicator_folder, cognitive_indicator, me
     ax.set_title('Correlation coef.: {0:0.2f}, p-value: {1:e}, \nregression line slope: {2:0.2f}'.format(list(correlation_frame['correlation'])[0], 
                                                                                                          list(correlation_frame['p-value-adjusted'])[0], 
                                                                                                          m), fontsize = 12)
+    fig.patch.set_facecolor('white')
     ax.set_xlabel(cpg_name, fontsize = 12)
     ax.set_ylabel(cognitive_indicator, fontsize = 12)
     plt.xticks(fontsize = 10)
