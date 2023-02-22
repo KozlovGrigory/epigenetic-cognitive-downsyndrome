@@ -7,7 +7,7 @@ def division_boundary_values (cognitive_indicator, cognitive_frame, class_values
         lim1 = splits[0][-1]
         lim2 = splits[1][-1]
     
-    classes = pd.DataFrame({'value': list(cognitive_frame[cognitive_indicator]), 'class': 0})
+    classes = pd.DataFrame({'id': list(cognitive_frame.index), 'value': list(cognitive_frame[cognitive_indicator]), 'class': 0})  
     for i in range(len(classes['value'])):
         if classes['value'].loc[i] <= lim1:
             classes.loc[i, 'class'] = 0
@@ -18,6 +18,7 @@ def division_boundary_values (cognitive_indicator, cognitive_frame, class_values
     classes_members = [list(classes['class']).count(0),
                        list(classes['class']).count(1),
                        list(classes['class']).count(2)]
+    classes.set_index('id', inplace = True)
     return classes, classes_members
 
 def division_into_classes (cognitive_indicator, cognitive_frame, division_method = 0, lim1 = 0, lim2 = 0):
